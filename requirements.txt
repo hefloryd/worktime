@@ -1,0 +1,7 @@
+docutils==0.16
+idle-time==0.1.0
+jeepney==0.4.3
+lockfile==0.12.2
+mss==5.1.0
+Pillow==7.1.2
+python-daemon==2.2.4
