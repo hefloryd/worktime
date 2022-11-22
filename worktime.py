@@ -68,7 +68,7 @@ def trigger_screenshot(args):
                 )
                 del font, draw
 
-                folder = "{}/{}".format(args.folder, now.strftime(FOLDER_FORMAT))
+                folder = Path(args.folder, now.strftime(FOLDER_FORMAT))
                 filename = "{}.png".format(now.strftime(FILENAME_FORMAT))
 
                 try:
@@ -76,20 +76,18 @@ def trigger_screenshot(args):
                 except FileExistsError:
                     pass
 
-                img.save("{}/{}".format(folder, filename))
+                img.save(Path(folder, filename), compress_level=9)
 
 def trim_screenshots(args):
-    oldest = datetime.now() - timedelta(args.keep)
     path = Path(args.folder)
-    dates = [p.name for p in list(path.glob(FOLDER_WILDCARD))]
-    timestamps = [datetime.strptime(d, FOLDER_FORMAT) for d in dates]
-    old = [t for t in timestamps if t < oldest]
+    folders = sorted([p.name for p in list(path.glob(FOLDER_WILDCARD))])
+    old = folders[:-args.keep]
 
     for o in old:
-        shutil.rmtree(Path(o.strftime(FOLDER_FORMAT)))
+        shutil.rmtree(Path(args.folder, o))
 
 def tracker(args):
-    # Disable read/write perimission for everyone but owner
+    # Disable read/write permission for everyone but owner
     os.umask(0o077)
     while True:
         trigger_screenshot(args)
