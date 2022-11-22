@@ -12,6 +12,7 @@ import logging
 import daemon
 import os
 import shutil
+import pyautogui
 
 FOLDER_FORMAT    = "%Y-%m-%d"
 FOLDER_WILDCARD  = "????-??-??"
@@ -19,6 +20,22 @@ FILENAME_FORMAT  = "%Y-%m-%d-%H-%M"
 TIMESTAMP_FORMAT = "%Y-%m-%d %H:%M"
 TIMESTAMP_FONT   = "FreeMono.ttf"
 TIMESTAMP_COLOUR = "lime"
+
+def get_active_region(sct):
+    x, y = pyautogui.position()
+    monitors = sct.monitors[1:] # skip index 0 containing size of all monitors
+
+    for m in monitors:
+        left = m['left']
+        right = m['left'] + m['width']
+        top = m['top']
+        bottom = m['top'] + m['height']
+
+        if x > left and x < right and y > top and y < bottom:
+            return m
+
+    # Did not find active region
+    return sct.monitors[0]
 
 def trigger_screenshot(args):
     m = IdleMonitor.get_monitor()
@@ -30,8 +47,15 @@ def trigger_screenshot(args):
 
         # Grab the screenshot
         with mss() as sct:
-            sct.compression_level = 9
-            sct_img = sct.grab(sct.monitors[0])
+            try:
+                # Try to grab region of requested monitor
+                region = sct.monitors[args.monitor]
+            except (IndexError, TypeError):
+                # Grab region of active monitor
+                region = get_active_region(sct)
+
+            logging.debug("region: {}".format(region))
+            sct_img = sct.grab(region)
 
             # Add timestamp to image and save
             with Image.frombytes("RGB", sct_img.size, sct_img.bgra, "raw", "BGRX") as img:
@@ -77,6 +101,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Worktime tracker")
 
     parser.add_argument("--folder", "-f", help="screenshot folder", required=True)
+    parser.add_argument("--monitor", "-m", help="monitor to capture", type=int)
     parser.add_argument("--daemon", action="store_true", help="run in background")
     parser.add_argument("--interval", "-i", help="interval time [seconds]", type=int, default=5*60)
     parser.add_argument("--keep", "-k", help="number of days to keep", type=int, default=21)
