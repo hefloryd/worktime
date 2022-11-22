@@ -8,8 +8,6 @@ verify_ssl = true
 [packages]
 
 [scripts]
-worktime = "./worktime.py --daemon -f $PWD/screenshots"
+worktimed = "./worktime.py --daemon -f $PWD/screenshots"
+worktime = "./worktime.py -f ./screenshots"
 report = "./report.py -f $PWD/screenshots"
-
-[requires]
-python_version = "3.7"
