@@ -3,6 +3,6 @@ idle-time==0.1.0
 jeepney==0.4.3
 lockfile==0.12.2
 mss==5.1.0
-Pillow==9.3.0
+Pillow==10.0.1
 PyAutoGUI==0.9.50
 python-daemon==2.2.4
