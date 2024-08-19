@@ -1,45 +1,99 @@
 # Worktime
 
-Track time using screenshots. This utility takes a screenshot of your
-monitors at a configurable interval. The screenshot is only taken if
-you were not idle during the interval. When you need to fill out a
-timesheet, use the screenshots to figure out what you were working
-on. Also included is a report utility that uses the timestamps of the
-screenshots to produce a weekly time report.
+**Worktime** is a time-tracking utility that helps you monitor your
+work activities by capturing screenshots at configurable
+intervals. The tool only takes screenshots when you're active,
+ensuring that your time tracking is accurate and efficient. These
+screenshots can be useful when filling out timesheets, as they provide
+a visual record of your tasks. Additionally, Worktime includes a
+reporting utility that generates a weekly time report based on the
+timestamps of the screenshots.
+
+## Features
+
+- **Automated Time Tracking**: Captures screenshots at set intervals
+  when activity is detected.
+- **Weekly Reports**: Generates time reports based on captured
+  screenshots, helping you review your weekly work hours.
+- **Configurable**: Customize screenshot intervals and storage
+  locations.
+- **Automatic Cleanup**: Older screenshots are automatically deleted
+  to conserve storage.
 
 ## Installation
 
-This utility has only been tested on Ubuntu Linux.
+Worktime has been tested on Ubuntu Linux.
 
-Install the requirements using pip or similar (pipenv or virtualenv):
+### Using `pipx` (Recommended)
 
-    $ pip install -r requirements.txt
+To install Worktime, it is recommended to use `pipx`. If `pipx` is not
+already installed, you can follow the [installation
+instructions](https://pipx.pypa.io/stable/).
+
+Once `pipx` is set up, install Worktime by running:
+
+    pipx install /path/to/worktime
 
 ## Usage
 
-Start the worktime tracker in the background:
+### Starting the Worktime Tracker
 
-    $ ./worktime.py --daemon -f /path/to/screenshots
+To start the Worktime tracker as a background process, run:
 
-By default, a screenshot will be taken every 5 minutes and stored in
-the folder you specified. Note that this may produce a lot of
-data. Screenshots older than 21 days will be deleted.
+    worktime --daemon -f /path/to/screenshots
 
-Generate a weekly report:
+By default, a screenshot is captured every 5 minutes and saved in the
+specified folder. Please note that the tracker can generate a
+substantial amount of data. Screenshots older than 21 days are
+automatically deleted to conserve storage.
 
-    $ ./report.py -f /path/to/screenshots
+### Generating a Weekly Report
 
-By default, times of the previous week are reported:
+To generate a report of your work hours for the previous week, run:
 
-    Week 18    Arrive     Leave      Lunch      Total
-    Mon        08:32      18:52      0:40       9:40
-    Tue        08:02      15:47      0:40       7:05
-    Wed        10:07      17:12      0:40       6:25
-    Thu        08:42      17:57      0:40       8:35
+    report -f /path/to/screenshots
+
+The report provides a summary similar to the following:
+
+    Week 27    Arrive     Leave      Lunch      Total
+    Mon        09:16      17:48      0:40       7:52
+    Tue        08:30      17:20      0:40       8:10
+    Wed        09:00      17:52      0:40       8:12
+    Thu        09:02      17:57      0:40       8:15
     Fri        09:42      17:37      0:40       7:15
 
-## Security
 
-The screenshots may contain sensitive information such as
-passwords. The default umask is set so that screenshots are only
-readable by the owner. Use at your own risk.
+## Installing as a systemd Service
+
+To run Worktime as a `systemd` service, follow these steps:
+
+1. Create a systemd unit file at
+   `~/.config/systemd/user/worktime.service` with the following
+   content:
+
+    ```
+    [Unit]
+    Description=Worktime service
+
+    [Service]
+    ExecStart=%h/.local/bin/worktime -f %h/.screenshots
+    Restart=on-failure
+    Environment=PYTHONUNBUFFERED=1
+
+    [Install]
+    WantedBy=default.target
+    ```
+
+2. Install and start the service by running:
+
+    ```
+    systemctl --user start worktime.service
+    systemctl --user enable worktime.service
+    ```
+
+## Security Considerations
+
+Please be aware that the screenshots may contain sensitive
+information, such as passwords. By default, the umask is configured so
+that screenshots are only accessible by the owner. Exercise caution
+and use Worktime at your own risk.

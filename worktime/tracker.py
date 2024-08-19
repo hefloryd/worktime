@@ -13,6 +13,7 @@ import daemon
 import os
 import shutil
 import pyautogui
+import sys
 
 FOLDER_FORMAT    = "%Y-%m-%d"
 FOLDER_WILDCARD  = "????-??-??"
@@ -94,24 +95,31 @@ def tracker(args):
         trim_screenshots(args)
         time.sleep(args.interval)
 
-if __name__ == "__main__":
+def main(args):
 
     parser = argparse.ArgumentParser(description="Worktime tracker")
 
-    parser.add_argument("--folder", "-f", help="screenshot folder", required=True)
+    parser.add_argument("--folder", "-f", help="screenshot folder", default=Path.home()/".screenshots")
     parser.add_argument("--monitor", "-m", help="monitor to capture", type=int)
     parser.add_argument("--daemon", action="store_true", help="run in background")
     parser.add_argument("--interval", "-i", help="interval time [seconds]", type=int, default=5*60)
     parser.add_argument("--keep", "-k", help="number of days to keep", type=int, default=21)
     parser.add_argument("--verbose", "-v", help="verbose logging", action="store_true")
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
 
     if args.verbose:
         logging.basicConfig(format='%(asctime)s %(message)s', level=logging.DEBUG)
 
     if args.daemon:
-        with daemon.DaemonContext():
+        with daemon.DaemonContext(stderr=sys.stderr,stdout=sys.stdout):
             tracker(args)
     else:
         tracker(args)
+
+def run():
+    main(sys.argv[1:])
+
+
+if __name__ == "__main__":
+    run()

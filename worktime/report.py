@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 import argparse
+import sys
 
 FOLDER_FORMAT   = "%Y-%m-%d"
 FILENAME_FORMAT = "%Y-%m-%d-%H-%M"
@@ -43,7 +44,7 @@ def report_week(args):
     for date in [start + timedelta(days=days) for days in range(7)]:
         report_day(args, date)
 
-if __name__ == "__main__":
+def main(args):
 
     # Default to previous week
     default_start = datetime.now() - timedelta(days=7)
@@ -52,12 +53,19 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Worktime report")
 
-    parser.add_argument("--folder", "-f", help="screenshot folder", required=True)
+    parser.add_argument("--folder", "-f", help="screenshot folder", default=Path.home()/".screenshots")
     parser.add_argument("--year", "-y", help="report year", type=int, default=default_year)
     parser.add_argument("--week", "-w", help="report week", type=int, default=default_week)
     parser.add_argument("--lunch", "-l", help="lunch time [minutes]", type=int, default=40)
 
-    args = parser.parse_args()
+    args = parser.parse_args(args)
     args.lunch = timedelta(minutes=args.lunch)
 
     report_week(args)
+
+def run():
+    main(sys.argv[1:])
+
+
+if __name__ == "__main__":
+    run()
