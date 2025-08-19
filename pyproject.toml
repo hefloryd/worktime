@@ -10,7 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "pillow>=10.4.0",
     "python-daemon>=3.0.1",
-    "idle-time>=0.1.0",
+    "dbus-idle>=1.0.0",
     "pyautogui>=0.9.54",
     "mss>=9.0.1",
 ]
