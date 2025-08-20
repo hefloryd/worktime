@@ -78,6 +78,7 @@ To run Worktime as a `systemd` service, follow these steps:
     [Service]
     ExecStart=%h/.local/bin/worktime -f %h/.screenshots
     Restart=on-failure
+    RestartSec=30
     Environment=PYTHONUNBUFFERED=1
 
     [Install]
