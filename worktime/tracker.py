@@ -2,7 +2,7 @@
 
 from idle_time import IdleMonitor
 from mss import mss
-from datetime import datetime, timedelta
+from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 from pathlib import Path
 

@@ -24,15 +24,24 @@ timestamps of the screenshots.
 
 Worktime has been tested on Ubuntu Linux.
 
-### Using `pipx` (Recommended)
+### Using `uv` (Recommended)
 
-To install Worktime, it is recommended to use `pipx`. If `pipx` is not
+To install Worktime, it is recommended to use `uv`. If `uv` is not
 already installed, you can follow the [installation
-instructions](https://pipx.pypa.io/stable/).
+instructions](https://docs.astral.sh/uv/getting-started/installation/).
 
-Once `pipx` is set up, install Worktime by running:
+Once `uv` is set up, install Worktime by running:
 
-    pipx install /path/to/worktime
+    uv tool install /path/to/worktime
+
+### Development
+
+For development, clone the repository and install dependencies:
+
+    git clone /path/to/worktime
+    cd worktime
+    uv sync
+    uv run worktime --help
 
 ## Usage
 

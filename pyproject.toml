@@ -1,25 +1,29 @@
-[tool.poetry]
+[project]
 name = "worktime"
 version = "0.1.0"
 description = ""
-authors = ["Hans-Erik Floryd <hans-erik.floryd@rt-labs.com>"]
+authors = [
+    {name = "Hans-Erik Floryd", email = "hans-erik.floryd@rt-labs.com"}
+]
 readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "pillow>=10.4.0",
+    "python-daemon>=3.0.1",
+    "idle-time>=0.1.0",
+    "pyautogui>=0.9.54",
+    "mss>=9.0.1",
+]
 
-[tool.poetry.dependencies]
-python = "^3.12"
-pillow = "^10.4.0"
-python-daemon = "^3.0.1"
-idle-time = "^0.1.0"
-pyautogui = "^0.9.54"
-mss = "^9.0.1"
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.6.0",
+]
 
-[tool.poetry.group.dev.dependencies]
-ruff = "^0.6.0"
-
-[tool.poetry.scripts]
-report = 'worktime.report:run'
-worktime = 'worktime.tracker:run'
+[project.scripts]
+report = "worktime.report:run"
+worktime = "worktime.tracker:run"
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["hatchling"]
+build-backend = "hatchling.build"
