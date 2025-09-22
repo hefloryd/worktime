@@ -1,6 +1,6 @@
 # Worktime
 
-**Worktime** is a time-tracking utility that helps you monitor your
+**Worktime** is a great time-tracking utility that helps you monitor your
 work activities by capturing screenshots at configurable
 intervals. The tool only takes screenshots when you're active,
 ensuring that your time tracking is accurate and efficient. These
