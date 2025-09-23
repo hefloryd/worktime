@@ -9,6 +9,8 @@ a visual record of your tasks. Additionally, Worktime includes a
 reporting utility that generates a weekly time report based on the
 timestamps of the screenshots.
 
+Some extra suff
+
 ## Features
 
 - **Automated Time Tracking**: Captures screenshots at set intervals
