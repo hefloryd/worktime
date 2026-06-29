@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import argparse
+import json
 import sys
 from datetime import datetime, time, timedelta
 from pathlib import Path
@@ -10,6 +11,18 @@ from rich.table import Table, box
 
 FOLDER_FORMAT = "%Y-%m-%d"
 FILENAME_FORMAT = "%Y-%m-%d-%H-%M"
+ADJUSTMENTS_FILE = "adjustments.json"
+DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMAT = "%H:%M"
+
+
+def load_adjustments(folder):
+    """Load time adjustments from JSON file"""
+    adjustments_path = Path(folder) / ADJUSTMENTS_FILE
+    if adjustments_path.exists():
+        with open(adjustments_path, "r") as f:
+            return json.load(f)
+    return {}
 
 
 def is_lunch(t1, t2):
@@ -19,11 +32,37 @@ def is_lunch(t1, t2):
     return t1 >= lunch_earliest and t2 <= lunch_latest
 
 
-def report_day(table, args, date):
+def report_day(table, args, date, adjustments):
     folder = "{}/{}".format(args.folder, date.strftime(FOLDER_FORMAT))
     path = Path(folder)
     screenshots = [p.stem for p in list(path.glob("*.png"))]
     timestamps = sorted([datetime.strptime(s, FILENAME_FORMAT) for s in screenshots])
+
+    # Check for manual time adjustments
+    date_key = date.strftime(DATE_FORMAT)
+    day_adjustments = adjustments.get(date_key, {})
+
+    # Apply punch-in/punch-out if present
+    if day_adjustments:
+        if "punch_in" in day_adjustments:
+            punch_in_time = datetime.strptime(
+                f"{date_key} {day_adjustments['punch_in']}",
+                f"{DATE_FORMAT} {TIME_FORMAT}",
+            )
+            if timestamps:
+                timestamps[0] = punch_in_time
+            else:
+                timestamps.append(punch_in_time)
+
+        if "punch_out" in day_adjustments:
+            punch_out_time = datetime.strptime(
+                f"{date_key} {day_adjustments['punch_out']}",
+                f"{DATE_FORMAT} {TIME_FORMAT}",
+            )
+            if timestamps:
+                timestamps[-1] = punch_out_time
+            else:
+                timestamps.append(punch_out_time)
 
     # Compute longest delta between consecutive timestamps
     longest_break = timedelta(minutes=0)
@@ -31,53 +70,82 @@ def report_day(table, args, date):
     longest_break_end = None
     long_breaks = []
     if len(timestamps) > 1:
-        deltas = [(timestamps[i] - timestamps[i-1], timestamps[i-1], timestamps[i]) for i in range(1, len(timestamps))]
-        longest_break, longest_break_start, longest_break_end = max(deltas, key=lambda x: x[0])
-        
+        deltas = [
+            (timestamps[i] - timestamps[i - 1], timestamps[i - 1], timestamps[i])
+            for i in range(1, len(timestamps))
+        ]
+        longest_break, longest_break_start, longest_break_end = max(
+            deltas, key=lambda x: x[0]
+        )
+
         # Collect all breaks longer than 20 minutes for -vv mode
         if args.verbose >= 2:
-            long_breaks = [(delta, start, end) for delta, start, end in deltas if delta > timedelta(minutes=20)]
+            long_breaks = [
+                (delta, start, end)
+                for delta, start, end in deltas
+                if delta > timedelta(minutes=20)
+            ]
 
     if len(timestamps) > 0:
         arrive = timestamps[0]
         leave = timestamps[-1]
         total = leave - arrive
-        lunch = longest_break if is_lunch(longest_break_start, longest_break_end) else args.lunch
+
+        # Determine lunch time
+        if "lunch" in day_adjustments:
+            # Use punched lunch time
+            lunch = timedelta(minutes=day_adjustments["lunch"])
+        elif is_lunch(longest_break_start, longest_break_end):
+            # Auto-detect lunch from longest break
+            lunch = longest_break
+        else:
+            # Use default lunch time
+            lunch = args.lunch
+
         if lunch > total:
             lunch = timedelta(0)
         total -= lunch
 
         row = []
-        row.append(date.strftime('%-d/%-m %a'))
-        row.append(arrive.strftime('%H:%M'))
-        row.append(leave.strftime('%H:%M'))
-        row.append((datetime.min + lunch).strftime('%H:%M'))
+        day_label = date.strftime("%-d/%-m %a")
+        if day_adjustments:
+            day_label += " *"
+        row.append(day_label)
+        row.append(arrive.strftime("%H:%M"))
+        row.append(leave.strftime("%H:%M"))
+        row.append((datetime.min + lunch).strftime("%H:%M"))
         if args.verbose >= 1:
-            row.append("{}-{}".format(
-                longest_break_start.strftime('%H:%M'),
-                longest_break_end.strftime('%H:%M')
+            row.append(
+                "{}-{}".format(
+                    longest_break_start.strftime("%H:%M"),
+                    longest_break_end.strftime("%H:%M"),
                 )
             )
         if args.verbose >= 2:
             if long_breaks:
-                breaks_str = ", ".join([
-                    "{}-{} ({})".format(
-                        start.strftime('%H:%M'),
-                        end.strftime('%H:%M'),
-                        (datetime.min + delta).strftime('%H:%M')
-                    )
-                    for delta, start, end in long_breaks
-                ])
+                breaks_str = ", ".join(
+                    [
+                        "{}-{} ({})".format(
+                            start.strftime("%H:%M"),
+                            end.strftime("%H:%M"),
+                            (datetime.min + delta).strftime("%H:%M"),
+                        )
+                        for delta, start, end in long_breaks
+                    ]
+                )
                 row.append(breaks_str)
             else:
                 row.append("-")
-        row.append((datetime.min + total).strftime('%H:%M'))
+        row.append((datetime.min + total).strftime("%H:%M"))
 
         table.add_row(*row)
 
 
 def report_week(args):
     start = datetime.strptime("{}-{}-1".format(args.year, args.week), "%G-%V-%u")
+
+    # Load time adjustments
+    adjustments = load_adjustments(args.folder)
 
     table = Table(title=f"Week {args.week}", box=box.SIMPLE)
     table.add_column("Day")
@@ -91,10 +159,18 @@ def report_week(args):
     table.add_column("Total")
 
     for date in [start + timedelta(days=days) for days in range(7)]:
-        report_day(table, args, date)
+        report_day(table, args, date, adjustments)
 
     console = Console()
     console.print(table)
+
+    # Show legend if there are adjustments
+    if any(
+        date.strftime(DATE_FORMAT) in adjustments
+        for date in [start + timedelta(days=days) for days in range(7)]
+    ):
+        console.print("\n[dim]* = manually adjusted times[/dim]")
+
 
 def main(args):
     # Default to previous week
@@ -104,9 +180,7 @@ def main(args):
 
     parser = argparse.ArgumentParser(description="Worktime report")
 
-    parser.add_argument(
-        "--verbose", "-v", action="count", default=0
-    )
+    parser.add_argument("--verbose", "-v", action="count", default=0)
 
     parser.add_argument(
         "--folder", "-f", help="screenshot folder", default=Path.home() / ".screenshots"

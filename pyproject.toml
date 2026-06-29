@@ -24,6 +24,7 @@ dev = [
 [project.scripts]
 report = "worktime.report:run"
 worktime = "worktime.tracker:run"
+worktime-punch = "worktime.punch:run"
 
 [build-system]
 requires = ["hatchling"]
